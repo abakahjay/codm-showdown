@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { EVENT_DEFAULTS } from "../lib/hooks.js";
+import { AUTHOR_NAME, PORTFOLIO_URL } from "../lib/contact.js";
 
 const tel = (n) => `tel:+233${n.slice(1)}`;
 const pretty = (n) => `${n.slice(0, 3)} ${n.slice(3, 6)} ${n.slice(6)}`;
@@ -25,11 +26,12 @@ export default function Footer({ event = EVENT_DEFAULTS }) {
           <Link to="/bracket">Bracket</Link>
           <Link to="/terms">Terms and rules</Link>
           <Link to="/privacy">Privacy</Link>
+          <a href={PORTFOLIO_URL} target="_blank" rel="noopener noreferrer">Portfolio</a>
         </div>
       </div>
       <div className="footer-legal">
         <p>An independent student event at UMaT, Tarkwa. Not affiliated with or endorsed by Activision or TiMi Studios; Call of Duty is their trademark.</p>
-        <p>Photos: Unsplash · Payments by Paystack</p>
+        <p>Built by <a className="link" data-testid="link-footer-portfolio" href={PORTFOLIO_URL} target="_blank" rel="noopener noreferrer">{AUTHOR_NAME}</a> · Photos: Unsplash · Payments by Paystack</p>
         <a className="link" href="#top">Back to top</a>
       </div>
     </footer>

@@ -15,13 +15,10 @@ export default function Header() {
 
   useEffect(() => {
     if (!onHome) { setTone("dark"); return undefined; }
-    const sections = [...document.querySelectorAll("[data-chapter]")];
-    if (!sections.length || !("IntersectionObserver" in window)) return undefined;
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => { if (e.isIntersecting) setTone(e.target.dataset.chapter); });
-    }, { rootMargin: "-36px 0px -95% 0px" });
-    sections.forEach((s) => io.observe(s));
-    return () => io.disconnect();
+    const onScroll = () => setTone(window.scrollY > 40 ? "solid" : "hero");
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, [onHome]);
 
   const home = (hash) => (onHome ? hash : `/${hash}`);
@@ -32,7 +29,7 @@ export default function Header() {
       <nav className={`nav${open ? " open" : ""}`} aria-label="Main">
         <button className="menu-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? "Close" : "Menu"}</button>
         <div className="nav-links">
-          <a href={home("#teams")}>Teams</a>
+          <a href={home("#teams")}>Squads</a>
           <Link to="/bracket">Bracket</Link>
           <a href={home("#entry")}>Entry</a>
           <a href={home("#faq")}>FAQ</a>

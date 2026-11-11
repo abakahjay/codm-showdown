@@ -104,7 +104,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 400; text-transform: uppe
   .nav.open .nav-links {
     display: flex; flex-direction: column; gap: 6px;
     position: absolute; top: 72px; left: 0; right: 0; padding: 16px var(--margin) 24px;
-    background: var(--hdr-bg, var(--ink));
+    background: #07090a;
   }
   .nav.open .nav-links a { font-size: 26px; padding: 6px 0; }
   .wordmark { font-size: 24px; }

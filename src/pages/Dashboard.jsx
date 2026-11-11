@@ -6,8 +6,27 @@ import { useEvent } from "../lib/hooks.js";
 import WhatsAppJoin from "../components/WhatsAppJoin.jsx";
 
 function PaymentPanel({ player, event }) {
+  const { refresh } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Coming back from Paystack with the Back button restores this page from the
+  // browser's back-forward cache, frozen on "Opening Paystack…". Reset the
+  // button and re-check the payment (they may have paid before going back).
+  useEffect(() => {
+    const onReturn = (e) => {
+      if (e.type === "pageshow" && !e.persisted) return;
+      if (e.type === "visibilitychange" && document.hidden) return;
+      setBusy(false);
+      refresh();
+    };
+    window.addEventListener("pageshow", onReturn);
+    document.addEventListener("visibilitychange", onReturn);
+    return () => {
+      window.removeEventListener("pageshow", onReturn);
+      document.removeEventListener("visibilitychange", onReturn);
+    };
+  }, [refresh]);
 
   const pay = async () => {
     setBusy(true);

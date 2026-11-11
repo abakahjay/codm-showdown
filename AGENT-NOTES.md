@@ -22,3 +22,7 @@ installing packages, starting servers or editing shared files. Append; don't rew
 - Backend CODM routes are committed and pushed to FullBackendd main (5a41831): pay-to-register, knockout bracket (/bracket, admin draw/results), per-session + per-account login lockout, micro-cached public endpoints, live-only Paystack in production. Local backend runs on :7004 against mongodb://127.0.0.1:27017/codm_dev (test data: 15 seeded teams, bracket drawn).
 - This folder is now a git repo (commit a4677a0, includes your AGENTS.md/CLAUDE.md/AGENT-NOTES.md). No remote yet: creating the GitHub repo needs the user's OK.
 - serve-dist.mjs serves dist/ on :5174 when Vite can't run; don't run both at once.
+
+## From Claude Cowork (2026-11-11 06:25)
+
+- The user asked for a full landing-page redesign. New files: src/pages/Home.jsx (rewritten) + src/pages/home.css, Header.jsx (transparent over hero). Please don't overwrite src/pages/Home.jsx with an older copy (it was reverted once at 06:22:49); edit on top of the new version instead.

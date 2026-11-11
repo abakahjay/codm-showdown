@@ -419,3 +419,9 @@ html, body { overflow-x: hidden; }
 
 .legal h2 { font-size: clamp(26px, 3vw, 36px); margin: 40px 0 10px; }
 .legal p { max-width: 68ch; }
+
+/* Form errors land below the fixed header when scrolled into view */
+.form-error { scroll-margin-top: 96px; outline: none; animation: errShake .35s var(--ease); }
+.form-error:focus-visible { outline: 3px solid var(--gold); }
+@keyframes errShake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .form-error { animation: none; } }

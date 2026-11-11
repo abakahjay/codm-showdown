@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
@@ -11,6 +11,20 @@ function Field({ label, hint, ...props }) {
       {hint && <span className="hint">{hint}</span>}
     </div>
   );
+}
+
+// Shows a form error and brings it into view: on a phone the submit button is
+// far below the top of the form, so without this the message is off-screen.
+function FormError({ message }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!message || !ref.current) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    ref.current.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    ref.current.focus({ preventScroll: true });
+  }, [message]);
+  if (!message) return null;
+  return <p ref={ref} className="alert form-error" role="alert" tabIndex={-1}>{message}</p>;
 }
 
 export function Register() {
@@ -41,9 +55,9 @@ export function Register() {
   return (
     <main className="app">
       <h1 className="app-title">Register to play</h1>
-      <p className="app-sub">One account per player. After this you can create your team or join one with an invite code, then pay your GH₵50 entry.</p>
+      <p className="app-sub">One account per player. Next you pay your GH₵50 entry (that's what registers you), then create your team or join one with an invite code.</p>
       <form className="form" onSubmit={submit} noValidate>
-        {error && <p className="alert" role="alert">{error}</p>}
+        <FormError message={error} />
         <Field id="fullName" label="Full name" autoComplete="name" value={form.fullName} onChange={set("fullName")} required maxLength={60} />
         <div className="row2">
           <Field id="email" label="Email" type="email" autoComplete="email" value={form.email} onChange={set("email")} required maxLength={120} hint="Your Paystack receipt goes here" />
@@ -99,7 +113,7 @@ export function Login() {
       <h1 className="app-title">Log in</h1>
       <p className="app-sub">Use the email or phone number you registered with.</p>
       <form className="form" onSubmit={submit}>
-        {error && <p className="alert" role="alert">{error}</p>}
+        <FormError message={error} />
         <Field id="identifier" label="Email or phone" autoComplete="username" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required maxLength={120} />
         <Field id="password" label="Password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button className="btn btn--block" disabled={busy}>{busy ? "Logging in…" : "Log in"}</button>

@@ -106,6 +106,12 @@ export default function Admin() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState(null);
   const onSaved = (d) => { setData(d); setEditing(null); };
+  const removePlayer = (m) => {
+    const typed = window.prompt(`Delete ${m.fullName} (${m.ign})? This can't be undone.\n\nType their email to confirm: ${m.email}`);
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== m.email) { window.alert("The email didn't match, so nothing was deleted."); return; }
+    api(`/admin/players/${m.id}`, { method: "DELETE", body: { confirm: m.email } }).then(setData).catch((e) => window.alert(e.message));
+  };
 
   const load = () => api("/admin/overview").then(setData).catch((e) => setError(e.message));
   const setPaid = (m, paid) => {
@@ -178,7 +184,7 @@ export default function Admin() {
               <thead><tr><th>IGN</th><th>Name</th><th>UID</th><th>Phone</th><th>Paid</th><th></th></tr></thead>
               <tbody>
                 {data.playersWithoutTeam.map((m) => (editing === m.id ? <PlayerEditor key={m.id} player={m} cols={6} onSaved={onSaved} onCancel={() => setEditing(null)} /> : (
-                  <tr key={m.id}><td>{m.ign}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : (m.paymentChannel || "").startsWith("Cash") ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button></td></tr>
+                  <tr key={m.id}><td>{m.ign}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : (m.paymentChannel || "").startsWith("Cash") ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button>{!m.paid && <button className="icon-btn" onClick={() => removePlayer(m)}>Delete</button>}</td></tr>
                 )))}
               </tbody>
             </table>

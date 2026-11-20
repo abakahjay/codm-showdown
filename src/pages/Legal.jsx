@@ -30,7 +30,7 @@ export function Terms() {
       <h2>Who can enter</h2>
       <p>UMaT students aged 16 or older with their own Call of Duty: Mobile account. One account per person; the organisers may check student ID on the day.</p>
       <h2>Entry fee and refunds</h2>
-      <p>GH₵50 per player, paid once through Paystack (or in cash to an organiser, who records it). Paying is what registers you. It is a one-off payment, not a subscription. Fees are not refunded once fixtures are published. If the event is cancelled, every paid player is refunded in full.</p>
+      <p>GH₵50 per player, paid once through Paystack plus Paystack's 1.95% processing fee (GH₵51.00 in total), or GH₵50 in cash to an organiser, who records it. Paying is what registers you. It is a one-off payment, not a subscription. Fees are not refunded once fixtures are published. If the event is cancelled, every paid player is refunded in full.</p>
       <h2>Teams and format</h2>
       <p>Teams of five paid players, Multiplayer 5v5, single elimination. When registration closes, confirmed teams are drawn at random into one knockout bracket and teams are locked. The winning team receives GH₵3,000 in cash, shared as the team decides.</p>
       <h2>Fair play</h2>

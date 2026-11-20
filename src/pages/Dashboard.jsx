@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, cedis, formatDate } from "../lib/api.js";
+import { api, cedis, cedis2, formatDate } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { useEvent } from "../lib/hooks.js";
 import WhatsAppJoin from "../components/WhatsAppJoin.jsx";
@@ -55,16 +55,17 @@ function PaymentPanel({ player, event }) {
       {player.paid ? (
         <div className="paid-box">
           <b>Registered</b>
-          <p>{cedis(event.entryFeeGhs)} via {player.paymentChannel || "Paystack"} on {formatDate(player.paidAt, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.</p>
+          <p>Entry paid via {player.paymentChannel || "Paystack"} on {formatDate(player.paidAt, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.</p>
         </div>
       ) : (
         <div className="pay-box">
-          <b>{cedis(event.entryFeeGhs)}</b>
+          <b>{cedis2(event.totalChargeGhs)}</b>
+          {event.processingFeeGhs > 0 && <p className="fee-line">{cedis2(event.entryFeeGhs)} entry + {cedis2(event.processingFeeGhs)} Paystack fee</p>}
           <p>Pay to register for the tournament. MoMo or card, on Paystack's secure page.</p>
           {error && <p className="alert" role="alert" style={{ marginTop: 12 }}>{error}</p>}
           <p style={{ fontSize: 15, marginTop: 8 }}>One-off payment, not a subscription. Not refunded once fixtures are published; fully refunded if the event is cancelled. <Link className="link" to="/terms">Terms</Link></p>
           <button className="btn btn--ink btn--block" onClick={pay} disabled={busy || !event.registrationOpen}>
-            {busy ? "Opening Paystack…" : event.registrationOpen ? `Pay ${cedis(event.entryFeeGhs)} now` : "Registration closed"}
+            {busy ? "Opening Paystack…" : event.registrationOpen ? `Pay ${cedis2(event.totalChargeGhs)} now` : "Registration closed"}
           </button>
         </div>
       )}

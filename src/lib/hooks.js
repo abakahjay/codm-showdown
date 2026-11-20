@@ -6,6 +6,10 @@ import { api } from "./api.js";
 export const EVENT_DEFAULTS = {
   name: "CODM Campus Showdown",
   entryFeeGhs: 50,
+  // Paystack's 1.95% fee, paid by the player on top (backend feeBreakdown()).
+  passFees: true,
+  processingFeeGhs: 1,
+  totalChargeGhs: 51,
   prizeGhs: 3000,
   teamSize: 5,
   maxTeams: 32,

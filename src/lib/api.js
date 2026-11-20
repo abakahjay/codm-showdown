@@ -80,6 +80,8 @@ export async function downloadCsv() {
 }
 
 export const cedis = (n) => `GH₵${Number(n).toLocaleString("en-GH")}`;
+// Always two decimals, for amounts that include the Paystack fee (GH₵51.00).
+export const cedis2 = (n) => `GH₵${Number(n).toLocaleString("en-GH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const formatDate = (iso, opts) =>
   new Date(iso).toLocaleString("en-GB", { timeZone: "Africa/Accra", ...opts });

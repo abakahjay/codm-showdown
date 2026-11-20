@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, cedis, formatDate } from "../lib/api.js";
+import { api, cedis, cedis2, formatDate } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 import { useCountdown, useEvent, usePolling, useReveal } from "../lib/hooks.js";
 import Footer from "../components/Footer.jsx";
@@ -98,7 +98,7 @@ function Steps({ event }) {
   const ref = useReveal();
   const steps = [
     ["Create your account", "Name, phone, in-game name and CODM UID. Takes under a minute."],
-    [`Pay ${cedis(event.entryFeeGhs)}`, "MoMo or card through Paystack. Paying is what registers you."],
+    [`Pay ${cedis(event.entryFeeGhs)}`, `MoMo or card through Paystack${event.processingFeeGhs > 0 ? ` (plus a ${cedis2(event.processingFeeGhs)} Paystack fee)` : ""}. Paying is what registers you.`],
     ["Squad up", "The captain creates the team and shares a 6-letter invite code with four paid friends."],
     ["Drop in", "Five paid players = confirmed. The draw puts you in the knockout bracket."],
   ];
@@ -235,7 +235,7 @@ function Entry({ event }) {
     <section className="h-sec" id="entry" ref={ref} aria-labelledby="entry-title">
       <div className="h-sec__head">
         <h2 id="entry-title" className="rise">Your entry ticket</h2>
-        <p className="rise" style={{ "--i": 1 }}>One payment, one player, one slot. No subscription, no hidden fees.</p>
+        <p className="rise" style={{ "--i": 1 }}>One payment, one player, one slot. No subscription. The only extra is Paystack's small processing fee, shown before you pay.</p>
       </div>
       <div className="ticket-wrap rise" style={{ "--i": 2 }}>
         <div className="ticket">
@@ -253,6 +253,7 @@ function Entry({ event }) {
             <div>
               <p className="price">{cedis(event.entryFeeGhs)}</p>
               <p className="per">per player</p>
+              {event.processingFeeGhs > 0 && <p className="per per--fee">+ {cedis2(event.processingFeeGhs)} Paystack fee</p>}
             </div>
             <Link className="btn btn--ink btn--block" to={player ? "/dashboard" : "/register"}>{player ? (player.paid ? "You're registered" : "Pay now") : "Register"}</Link>
           </div>
@@ -265,7 +266,7 @@ function Entry({ event }) {
 const FAQ = [
   ["Who can play?", "UMaT students aged 16+ with their own Call of Duty: Mobile account. Bring your student ID on the day."],
   ["What devices are allowed?", "Phones and tablets. A Bluetooth controller paired to your device is fine. Emulators and PCs are not allowed."],
-  ["How do I pay, and is it safe?", "Through Paystack, Ghana's licensed payment provider: MTN MoMo, Telecel Cash, AirtelTigo Money or card. We never see your PIN or card number."],
+  ["How do I pay, and is it safe?", "Through Paystack, Ghana's licensed payment provider: MTN MoMo, Telecel Cash, AirtelTigo Money or card. Paystack's 1.95% processing fee is added on top (GH₵50 entry + GH₵1.00 = GH₵51.00). We never see your PIN or card number."],
   ["Can someone else pay for me?", "Yes. You pay from your own account, but any MoMo number or card can be used on the Paystack page."],
   ["What if a teammate drops out?", "The captain removes them and shares the invite code with a replacement. Your payment stays with you if you switch teams. Teams lock when the bracket is drawn."],
   ["How does the bracket work?", "When registration closes, every confirmed squad is drawn at random into one single-elimination bracket. If the number of teams isn't a power of two, some get a bye into round two. Results update live on this site."],

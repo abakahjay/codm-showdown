@@ -425,3 +425,6 @@ html, body { overflow-x: hidden; }
 .form-error:focus-visible { outline: 3px solid var(--gold); }
 @keyframes errShake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @media (prefers-reduced-motion: reduce) { .form-error { animation: none; } }
+
+.fee-line { font-weight: 700; margin-top: 4px; }
+.per--fee { font-size: 16px; margin-top: 2px; opacity: .85; }

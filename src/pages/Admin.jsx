@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, cedis, downloadCsv, formatDate } from "../lib/api.js";
 import Bracket from "../components/Bracket.jsx";
+import AdminRefunds from "../components/AdminRefunds.jsx";
 
 // datetime-local value in Ghana time (UTC+0)
 const toLocal = (iso) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
@@ -98,6 +99,7 @@ export default function Admin() {
         <button className="btn btn--quiet" onClick={load}>Refresh</button>
       </div>
       <AdminBracket confirmedTeams={t.confirmedTeams} />
+      <AdminRefunds onChanged={load} />
       <div className="field" style={{ maxWidth: 420, marginTop: 32 }}>
         <label htmlFor="search">Search team, player, phone or UID</label>
         <input id="search" value={q} onChange={(e) => setQ(e.target.value)} />

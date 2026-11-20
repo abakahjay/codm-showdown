@@ -10,6 +10,8 @@ export const EVENT_DEFAULTS = {
   passFees: true,
   processingFeeGhs: 1,
   totalChargeGhs: 51,
+  cancelled: false,
+  cancelReason: null,
   prizeGhs: 3000,
   teamSize: 5,
   maxTeams: 32,

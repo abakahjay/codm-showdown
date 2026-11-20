@@ -52,13 +52,20 @@ function PaymentPanel({ player, event }) {
         <dt>Phone</dt><dd>{player.phone}</dd>
         <dt>Email</dt><dd>{player.email}</dd>
       </dl>
-      {player.paid ? (
+      {event.cancelled ? (
+        <div className="paid-box cancelled-box">
+          <b>Tournament cancelled</b>
+          {event.cancelReason && <p>{event.cancelReason}</p>}
+          <p>{player.paid || player.refundedAt ? "Your entry fee is being refunded to the MoMo wallet or card you paid with. It takes 3 to 10 working days. Cash entries are handed back by the organisers." : "No payment is needed."} Questions? Ask in the WhatsApp group.</p>
+        </div>
+      ) : player.paid ? (
         <div className="paid-box">
           <b>Registered</b>
           <p>Entry paid via {player.paymentChannel || "Paystack"} on {formatDate(player.paidAt, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.</p>
         </div>
       ) : (
         <div className="pay-box">
+          {player.refundedAt && <p className="fee-line" style={{ marginBottom: 6 }}>Your earlier entry was refunded on {formatDate(player.refundedAt, { day: "numeric", month: "short" })}. Pay again to re-enter.</p>}
           <b>{cedis2(event.totalChargeGhs)}</b>
           {event.processingFeeGhs > 0 && <p className="fee-line">{cedis2(event.entryFeeGhs)} entry + {cedis2(event.processingFeeGhs)} Paystack fee</p>}
           <p>Pay to register for the tournament. MoMo or card, on Paystack's secure page.</p>
@@ -73,7 +80,7 @@ function PaymentPanel({ player, event }) {
   );
 }
 
-function NoTeam({ onTeam, open, paid }) {
+function NoTeam({ onTeam, open, paid, cancelled }) {
   const [tab, setTab] = useState("join");
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
@@ -86,6 +93,15 @@ function NoTeam({ onTeam, open, paid }) {
     setError("");
     try { onTeam((await fn()).team); } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
+
+  if (cancelled) {
+    return (
+      <section className="panel" aria-labelledby="team-title">
+        <h2 id="team-title">Your team</h2>
+        <p className="muted">The tournament has been cancelled, so teams are closed.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="panel" aria-labelledby="team-title">
@@ -210,12 +226,14 @@ export default function Dashboard() {
     <main className="app">
       <h1 className="app-title">Hi, {player.fullName.split(" ")[0]}</h1>
       <p className="app-sub">
-        {player.paid ? "You're registered." : `Step one: pay your ${cedis(event.entryFeeGhs)} entry to register. Then create or join a team.`} Matches start {formatDate(event.startsAt, { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true })} at {event.venue}.
+        {event.cancelled
+          ? "The tournament has been cancelled. Everyone who paid gets their money back."
+          : <>{player.paid ? "You're registered." : `Step one: pay your ${cedis(event.entryFeeGhs)} entry to register. Then create or join a team.`} Matches start {formatDate(event.startsAt, { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true })} at {event.venue}.</>}
       </p>
       <div className="dash">
         <PaymentPanel player={player} event={event} />
         {team === undefined && <section className="panel"><div className="spinner" aria-label="Loading your team" /></section>}
-        {team === null && <NoTeam onTeam={onTeam} open={event.registrationOpen} paid={player.paid} />}
+        {team === null && <NoTeam onTeam={onTeam} open={event.registrationOpen} paid={player.paid} cancelled={event.cancelled} />}
         {team && <TeamPanel team={team} me={player} size={event.teamSize} open={event.registrationOpen} onTeam={onTeam} />}
       </div>
       <section className="panel" style={{ marginTop: 16 }} aria-label="WhatsApp group"><WhatsAppJoin url={event.contacts.whatsappGroup} /></section>

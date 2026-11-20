@@ -54,9 +54,14 @@ function Hero({ event }) {
             <span>Campus</span>
             <span className="accent">Showdown</span>
           </h1>
+          {event.cancelled && (
+            <p className="h-cancelled" role="alert"><b>Tournament cancelled.</b> {event.cancelReason} Everyone who paid is being refunded to the wallet or card they used (3 to 10 working days).</p>
+          )}
           <p className="h-lede">The Call of Duty: Mobile 5v5 tournament for UMaT. Build your squad of five, pay {cedis(event.entryFeeGhs)} each, and fight through the bracket for <strong>{cedis(event.prizeGhs)} cash</strong>.</p>
           <div className="h-ctas">
-            <Link className="btn btn--lg" to={player ? "/dashboard" : "/register"}>{player ? "Go to my team" : `Register · ${cedis(event.entryFeeGhs)}`}</Link>
+            {event.cancelled
+              ? player && <Link className="btn btn--lg" to="/dashboard">My refund</Link>
+              : <Link className="btn btn--lg" to={player ? "/dashboard" : "/register"}>{player ? "Go to my team" : `Register · ${cedis(event.entryFeeGhs)}`}</Link>}
             <a className="btn btn--ghost btn--lg" href={event.contacts.whatsappGroup} target="_blank" rel="noopener noreferrer">Join the WhatsApp group</a>
           </div>
           <dl className="h-facts">
@@ -72,8 +77,8 @@ function Hero({ event }) {
           <p className="h-card__prize">{cedis(event.prizeGhs)}</p>
           <p className="h-card__sub">Cash to the champion squad</p>
           <div className="h-card__rule" />
-          <p className="h-card__label">Registration closes in</p>
-          <Countdown iso={event.registrationClosesAt} />
+          <p className="h-card__label">{event.cancelled ? "Status" : "Registration closes in"}</p>
+          {event.cancelled ? <p className="cd-closed">Cancelled</p> : <Countdown iso={event.registrationClosesAt} />}
           <div className="slots-bar" aria-label={`${taken} of ${event.maxTeams} team slots taken`}>
             <div className="slots-bar__fill" style={{ width: `${Math.max(pct, 3)}%` }} />
           </div>
@@ -302,10 +307,16 @@ function FinalCta({ event }) {
       <div className="h-final__inner">
         <div>
           <h2 id="final-title">Your squad. {cedis(event.prizeGhs)}. One night.</h2>
-          <p>Slots are limited to {event.maxTeams} teams. Register now and lock yours in.</p>
-          <div className="h-ctas">
-            <Link className="btn btn--lg" to={player ? "/dashboard" : "/register"}>{player ? "Go to my team" : "Register now"}</Link>
-          </div>
+          {event.cancelled ? (
+            <p>This tournament was cancelled and everyone who paid is being refunded. Watch the WhatsApp group for the next one.</p>
+          ) : (
+            <>
+              <p>Slots are limited to {event.maxTeams} teams. Register now and lock yours in.</p>
+              <div className="h-ctas">
+                <Link className="btn btn--lg" to={player ? "/dashboard" : "/register"}>{player ? "Go to my team" : "Register now"}</Link>
+              </div>
+            </>
+          )}
           <ul className="contacts">
             <li><span>Organiser</span><a href={tel(c.organiser[0])}>{pretty(c.organiser[0])}</a></li>
             <li><span>Organiser</span><a href={tel(c.organiser[1])}>{pretty(c.organiser[1])}</a></li>

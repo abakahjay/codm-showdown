@@ -61,10 +61,51 @@ function AdminBracket({ confirmedTeams }) {
   );
 }
 
+const FIELDS = [["fullName", "Full name"], ["ign", "In-game name"], ["codmUid", "CODM UID"], ["phone", "Phone"], ["email", "Email"]];
+
+function PlayerEditor({ player, cols, onSaved, onCancel }) {
+  const [form, setForm] = useState(() => Object.fromEntries(FIELDS.map(([k]) => [k, player[k] || ""])));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const save = async (e) => {
+    e.preventDefault();
+    const body = Object.fromEntries(FIELDS.filter(([k]) => form[k].trim() !== (player[k] || "")).map(([k]) => [k, form[k].trim()]));
+    if (!Object.keys(body).length) return onCancel();
+    setBusy(true); setError("");
+    try {
+      onSaved(await api(`/admin/players/${player.id}`, { method: "PATCH", body }));
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <tr className="edit-row">
+      <td colSpan={cols}>
+        <form className="edit-player" onSubmit={save}>
+          {FIELDS.map(([k, label]) => (
+            <div className="field" key={k}>
+              <label htmlFor={`edit-${player.id}-${k}`}>{label}</label>
+              <input id={`edit-${player.id}-${k}`} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} inputMode={k === "codmUid" || k === "phone" ? "numeric" : undefined} />
+            </div>
+          ))}
+          {error && <p className="alert" role="alert">{error}</p>}
+          <div className="actions">
+            <button className="btn btn--sm" type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+            <button className="btn btn--quiet btn--sm" type="button" onClick={onCancel} disabled={busy}>Cancel</button>
+          </div>
+        </form>
+      </td>
+    </tr>
+  );
+}
+
 export default function Admin() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState(null);
+  const onSaved = (d) => { setData(d); setEditing(null); };
 
   const load = () => api("/admin/overview").then(setData).catch((e) => setError(e.message));
   const setPaid = (m, paid) => {
@@ -111,16 +152,17 @@ export default function Admin() {
           <p className={team.confirmed ? "status--ok" : "muted"}>{team.confirmed ? "Confirmed" : `${team.memberCount}/${data.event.teamSize} joined · ${team.paidCount} paid`} · code {team.inviteCode}</p>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>IGN</th><th>Name</th><th>UID</th><th>Phone</th><th>Paid</th><th>Channel</th></tr></thead>
+              <thead><tr><th>IGN</th><th>Name</th><th>UID</th><th>Phone</th><th>Paid</th><th>Channel</th><th></th></tr></thead>
               <tbody>
-                {team.members.map((m) => (
+                {team.members.map((m) => (editing === m.id ? <PlayerEditor key={m.id} player={m} cols={7} onSaved={onSaved} onCancel={() => setEditing(null)} /> : (
                   <tr key={m.id}>
                     <td>{m.ign}{m.isCaptain ? " (C)" : ""}</td><td>{m.fullName}</td><td>{m.codmUid}</td>
                     <td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td>
                     <td>{m.paid ? formatDate(m.paidAt, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "No"}</td>
                     <td>{m.paymentChannel || ""}</td>
+                    <td><button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button></td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
@@ -135,9 +177,9 @@ export default function Admin() {
             <table>
               <thead><tr><th>IGN</th><th>Name</th><th>UID</th><th>Phone</th><th>Paid</th><th></th></tr></thead>
               <tbody>
-                {data.playersWithoutTeam.map((m) => (
-                  <tr key={m.id}><td>{m.ign}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : (m.paymentChannel || "").startsWith("Cash") ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null}</td></tr>
-                ))}
+                {data.playersWithoutTeam.map((m) => (editing === m.id ? <PlayerEditor key={m.id} player={m} cols={6} onSaved={onSaved} onCancel={() => setEditing(null)} /> : (
+                  <tr key={m.id}><td>{m.ign}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : (m.paymentChannel || "").startsWith("Cash") ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button></td></tr>
+                )))}
               </tbody>
             </table>
           </div>

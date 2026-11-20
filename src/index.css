@@ -446,3 +446,7 @@ html, body { overflow-x: hidden; }
 
 .check-paid { display: grid; gap: 10px; justify-items: start; margin-top: 4px; }
 .check-paid p { margin: 0; }
+
+.edit-row td { background: var(--ink-3); }
+.edit-player { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; padding: 8px 0; }
+.edit-player .alert, .edit-player .actions { grid-column: 1 / -1; margin: 0; }

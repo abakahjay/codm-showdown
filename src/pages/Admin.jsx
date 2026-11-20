@@ -61,15 +61,18 @@ function AdminBracket({ confirmedTeams }) {
   );
 }
 
+const CHANNELS = ["Cash", "MTN MoMo", "Telecel Cash", "AirtelTigo Money"];
 const FIELDS = [["fullName", "Full name"], ["ign", "In-game name"], ["codmUid", "CODM UID"], ["phone", "Phone"], ["email", "Email"]];
 
 function PlayerEditor({ player, cols, onSaved, onCancel }) {
   const [form, setForm] = useState(() => Object.fromEntries(FIELDS.map(([k]) => [k, player[k] || ""])));
+  const [channel, setChannel] = useState(player.paymentChannel || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const save = async (e) => {
     e.preventDefault();
     const body = Object.fromEntries(FIELDS.filter(([k]) => form[k].trim() !== (player[k] || "")).map(([k]) => [k, form[k].trim()]));
+    if (player.manualPayment && channel && channel !== player.paymentChannel) body.paymentChannel = channel;
     if (!Object.keys(body).length) return onCancel();
     setBusy(true); setError("");
     try {
@@ -89,6 +92,15 @@ function PlayerEditor({ player, cols, onSaved, onCancel }) {
               <input id={`edit-${player.id}-${k}`} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} inputMode={k === "codmUid" || k === "phone" ? "numeric" : undefined} />
             </div>
           ))}
+          {player.manualPayment && (
+            <div className="field">
+              <label htmlFor={`edit-${player.id}-channel`}>Paid with (recorded entry)</label>
+              <select id={`edit-${player.id}-channel`} value={CHANNELS.includes(channel) ? channel : ""} onChange={(e) => setChannel(e.target.value)}>
+                {!CHANNELS.includes(channel) && <option value="">{channel || "Choose"}</option>}
+                {CHANNELS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          )}
           {error && <p className="alert" role="alert">{error}</p>}
           <div className="actions">
             <button className="btn btn--sm" type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
@@ -184,7 +196,7 @@ export default function Admin() {
               <thead><tr><th>IGN</th><th>Name</th><th>UID</th><th>Phone</th><th>Paid</th><th></th></tr></thead>
               <tbody>
                 {data.playersWithoutTeam.map((m) => (editing === m.id ? <PlayerEditor key={m.id} player={m} cols={6} onSaved={onSaved} onCancel={() => setEditing(null)} /> : (
-                  <tr key={m.id}><td>{m.ign}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : (m.paymentChannel || "").startsWith("Cash") ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button>{!m.paid && <button className="icon-btn" onClick={() => removePlayer(m)}>Delete</button>}</td></tr>
+                  <tr key={m.id}><td>{m.ign}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : m.manualPayment ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button>{!m.paid && <button className="icon-btn" onClick={() => removePlayer(m)}>Delete</button>}</td></tr>
                 )))}
               </tbody>
             </table>

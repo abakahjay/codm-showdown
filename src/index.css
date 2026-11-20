@@ -288,7 +288,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 400; text-transform: uppe
 @media (max-width: 560px) { .form .row2 { grid-template-columns: 1fr; } }
 .field { display: grid; gap: 6px; }
 .field label { font-weight: 700; font-size: 18px; }
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   min-height: 54px; padding: 0 16px; border: 2px solid var(--ink-3); border-radius: 0;
   background: var(--ink-2); color: var(--paper); font-size: 19px; font-weight: 600;
   transition: border-color .15s, background-color .15s;

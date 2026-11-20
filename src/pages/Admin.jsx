@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, cedis, downloadCsv, formatDate } from "../lib/api.js";
 import Bracket from "../components/Bracket.jsx";
 import AdminRefunds from "../components/AdminRefunds.jsx";
+import { useAuth } from "../lib/auth.jsx";
 
 // datetime-local value in Ghana time (UTC+0)
 const toLocal = (iso) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
@@ -117,6 +118,7 @@ export default function Admin() {
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState(null);
+  const { player: me } = useAuth();
   const onSaved = (d) => { setData(d); setEditing(null); };
   const removePlayer = (m) => {
     const typed = window.prompt(`Delete ${m.fullName} (${m.ign})? This can't be undone.\n\nType their email to confirm: ${m.email}`);
@@ -196,7 +198,7 @@ export default function Admin() {
               <thead><tr><th>IGN</th><th>Name</th><th>UID</th><th>Phone</th><th>Paid</th><th></th></tr></thead>
               <tbody>
                 {data.playersWithoutTeam.map((m) => (editing === m.id ? <PlayerEditor key={m.id} player={m} cols={6} onSaved={onSaved} onCancel={() => setEditing(null)} /> : (
-                  <tr key={m.id}><td>{m.ign}{m.role === "admin" ? " (organiser)" : ""}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : m.manualPayment ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button>{!m.paid && m.role !== "admin" && <button className="icon-btn" onClick={() => removePlayer(m)}>Delete</button>}</td></tr>
+                  <tr key={m.id}><td>{m.ign}{m.role === "admin" ? " (organiser)" : ""}</td><td>{m.fullName}</td><td>{m.codmUid}</td><td><a className="link" href={`tel:${m.phone}`}>{m.phone}</a></td><td>{m.paid ? `Yes · ${m.paymentChannel || ""}` : "No"}</td><td>{!m.paid ? <button className="icon-btn" onClick={() => setPaid(m, true)}>Record cash payment</button> : m.manualPayment ? <button className="icon-btn" onClick={() => setPaid(m, false)}>Undo cash</button> : null} <button className="icon-btn" onClick={() => setEditing(m.id)}>Edit</button>{!m.paid && m.id !== me?.id && <button className="icon-btn" onClick={() => removePlayer(m)}>Delete</button>}</td></tr>
                 )))}
               </tbody>
             </table>

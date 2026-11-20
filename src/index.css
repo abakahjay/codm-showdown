@@ -443,3 +443,6 @@ html, body { overflow-x: hidden; }
 .cancelled-box { background: #3a1712; color: #ffd9d2; }
 .h-cancelled { background: var(--danger); color: var(--ink); padding: 12px 16px; font-weight: 600; margin-bottom: 18px; max-width: 46ch; }
 .field textarea { min-height: 0; padding: 12px 16px; resize: vertical; line-height: 1.35; }
+
+.check-paid { display: grid; gap: 10px; justify-items: start; margin-top: 4px; }
+.check-paid p { margin: 0; }

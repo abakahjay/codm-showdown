@@ -5,6 +5,31 @@ import { useAuth } from "../lib/auth.jsx";
 import { useEvent } from "../lib/hooks.js";
 import WhatsAppJoin from "../components/WhatsAppJoin.jsx";
 
+// Paystack payments the return page missed (slow MoMo approval, page closed) are
+// checked again by the backend; this asks it for this player.
+const syncPayment = () => api("/payments/sync", { method: "POST", body: {} });
+
+function CheckPaid({ onPaid }) {
+  const [state, setState] = useState("idle");
+  const check = async () => {
+    setState("busy");
+    try {
+      const d = await syncPayment();
+      if (d.success) { onPaid(d.player); return; }
+      setState("none");
+    } catch (err) {
+      setState(err.message);
+    }
+  };
+  return (
+    <div className="check-paid">
+      <button className="btn btn--quiet" onClick={check} disabled={state === "busy"}>{state === "busy" ? "Checking with Paystack…" : "I've paid: check again"}</button>
+      {state === "none" && <p className="muted" role="status">No completed payment found yet. If you approved it on your phone just now, wait a minute and check again. Still stuck? Send your Paystack receipt to the organiser on WhatsApp.</p>}
+      {!["idle", "busy", "none"].includes(state) && <p className="alert" role="alert">{state}</p>}
+    </div>
+  );
+}
+
 function PaymentPanel({ player, event }) {
   const { refresh } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -80,7 +105,7 @@ function PaymentPanel({ player, event }) {
   );
 }
 
-function NoTeam({ onTeam, open, paid, cancelled }) {
+function NoTeam({ onTeam, onPaid, open, paid, cancelled }) {
   const [tab, setTab] = useState("join");
   const [name, setName] = useState("");
   const [tag, setTag] = useState("");
@@ -107,11 +132,16 @@ function NoTeam({ onTeam, open, paid, cancelled }) {
     <section className="panel" aria-labelledby="team-title">
       <h2 id="team-title">Your team</h2>
       <p className="muted" style={{ marginBottom: 20 }}>You're not in a team yet. Join your captain's team with their invite code, or create a team and be the captain.</p>
-      {!paid && <p className="alert alert--info">Pay your entry first: paying is what registers you. Then you can create or join a team here.</p>}
-      <div className="tabs" role="tablist">
+      {!paid && (
+        <>
+          <p className="alert alert--info">Pay your entry first: paying is what registers you. Joining and creating a team open here as soon as your payment is confirmed.</p>
+          <CheckPaid onPaid={onPaid} />
+        </>
+      )}
+      {paid && <div className="tabs" role="tablist">
         <button role="tab" aria-selected={tab === "join"} onClick={() => setTab("join")}>Join with a code</button>
         <button role="tab" aria-selected={tab === "create"} onClick={() => setTab("create")}>Create a team</button>
-      </div>
+      </div>}
       {error && <p className="alert" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
       {!open && <p className="alert alert--info">Registration is closed.</p>}
       {open && paid && tab === "join" && (
@@ -212,7 +242,7 @@ function TeamPanel({ team, me, size, open, onTeam }) {
 }
 
 export default function Dashboard() {
-  const { player, signOut, refresh } = useAuth();
+  const { player, signOut, refresh, setPlayer } = useAuth();
   const { event } = useEvent();
   const navigate = useNavigate();
   const [team, setTeam] = useState(undefined);
@@ -221,6 +251,16 @@ export default function Dashboard() {
   useEffect(() => { loadTeam(); }, [loadTeam]);
 
   const onTeam = (t) => { setTeam(t); refresh(); };
+
+  // An unpaid player may have paid without the return page confirming it: ask the
+  // backend to look again each time the dashboard opens.
+  const unpaid = !!player && !player.paid && !event.cancelled;
+  useEffect(() => {
+    if (!unpaid) return;
+    let alive = true;
+    syncPayment().then((d) => { if (alive && d.success) setPlayer(d.player); }).catch(() => {});
+    return () => { alive = false; };
+  }, [unpaid, setPlayer]);
 
   return (
     <main className="app">
@@ -233,7 +273,7 @@ export default function Dashboard() {
       <div className="dash">
         <PaymentPanel player={player} event={event} />
         {team === undefined && <section className="panel"><div className="spinner" aria-label="Loading your team" /></section>}
-        {team === null && <NoTeam onTeam={onTeam} open={event.registrationOpen} paid={player.paid} cancelled={event.cancelled} />}
+        {team === null && <NoTeam onTeam={onTeam} onPaid={setPlayer} open={event.registrationOpen} paid={player.paid} cancelled={event.cancelled} />}
         {team && <TeamPanel team={team} me={player} size={event.teamSize} open={event.registrationOpen} onTeam={onTeam} />}
       </div>
       <section className="panel" style={{ marginTop: 16 }} aria-label="WhatsApp group"><WhatsAppJoin url={event.contacts.whatsappGroup} /></section>

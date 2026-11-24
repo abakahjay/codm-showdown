@@ -56,7 +56,7 @@ export default function AdminRefunds({ onChanged }) {
 
   const refundOne = async (row) => {
     const p = row.player;
-    const amount = cedis2(row.amountGhs);
+    const amount = cedis2(row.method === "cash" ? row.amountGhs : row.chargedGhs ?? row.amountGhs);
     const text = row.method === "cash"
       ? `${p.fullName} (${p.ign}) paid ${amount} in cash.\n\nHave you handed the cash back? This records the refund, marks them unpaid and takes them out of their team.`
       : `Refund ${amount} to ${p.fullName} (${p.ign}) through Paystack?\n\nIt goes back to the MoMo wallet or card they paid with in 3 to 10 working days. Paystack keeps its fee, and the money comes out of payouts Paystack hasn't sent you yet. They will be marked unpaid and taken out of their team. This can't be undone.`;
@@ -122,7 +122,7 @@ export default function AdminRefunds({ onChanged }) {
         ) : (
           <div className="table-wrap" style={{ marginTop: 12 }}>
             <table>
-              <thead><tr><th>Player</th><th>Phone</th><th>Paid</th><th>Method</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>Player</th><th>Phone</th><th>Entry</th><th>Method</th><th>Status</th><th></th></tr></thead>
               <tbody>
                 {rows.map((r) => {
                   const canRefund = r.player && (!r.refundStatus || r.refundStatus === "failed");
@@ -136,7 +136,7 @@ export default function AdminRefunds({ onChanged }) {
                       <td>
                         {canRefund && (
                           <button className="btn btn--quiet btn--sm" disabled={busyId === r.paymentId || allBusy} onClick={() => refundOne(r)}>
-                            {busyId === r.paymentId ? "Refunding…" : r.method === "cash" ? "Record cash refund" : r.refundStatus === "failed" ? "Try again" : `Refund ${cedis2(r.amountGhs)}`}
+                            {busyId === r.paymentId ? "Refunding…" : r.method === "cash" ? "Record cash refund" : r.refundStatus === "failed" ? "Try again" : `Refund ${cedis2(r.chargedGhs ?? r.amountGhs)}`}
                           </button>
                         )}
                       </td>
@@ -161,7 +161,7 @@ export default function AdminRefunds({ onChanged }) {
           </p>
         )}
         <ul className="refund-summary">
-          <li><b>{t.onlineRefunded}/{t.onlinePayments}</b> online payments refunded ({cedis2(t.onlineGhs)} paid in total)</li>
+          <li><b>{t.onlineRefunded}/{t.onlinePayments}</b> online payments refunded ({cedis2(t.onlineGhs)} in entry fees)</li>
           {t.onlineFailed > 0 && <li className="status--bad"><b>{t.onlineFailed}</b> failed: see the reasons above, then try again</li>}
           <li><b>{t.cashToHandBack}</b> cash payment{t.cashToHandBack === 1 ? "" : "s"} to hand back yourself ({cedis2(t.cashGhs)}), then record each one above</li>
         </ul>

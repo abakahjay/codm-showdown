@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, cedis, downloadCsv, formatDate } from "../lib/api.js";
+import { api, cedis, cedis2, downloadCsv, formatDate } from "../lib/api.js";
 import Bracket from "../components/Bracket.jsx";
 import AdminRefunds from "../components/AdminRefunds.jsx";
 import { useAuth } from "../lib/auth.jsx";
@@ -153,7 +153,7 @@ export default function Admin() {
         <div className="stat"><b>{t.confirmedTeams}</b>Confirmed teams</div>
         <div className="stat"><b>{t.players}</b>Players</div>
         <div className="stat"><b>{t.paidPlayers}</b>Paid players</div>
-        <div className="stat"><b>{cedis(t.collectedGhs)}</b>Collected (before Paystack fees)</div>
+        <div className="stat"><b>{cedis(t.collectedGhs)}</b>Entry fees collected (GH₵{data.event?.entryFeeGhs ?? 50} each){t.paystackFeesGhs > 0 ? `, plus ${cedis2(t.paystackFeesGhs)} Paystack charges paid by players` : ""}</div>
       </div>
       <div className="actions">
         <button className="btn" onClick={() => downloadCsv().catch((e) => setError(e.message))}>Download team sheet (CSV)</button>

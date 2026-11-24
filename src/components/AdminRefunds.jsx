@@ -71,7 +71,7 @@ export default function AdminRefunds({ onChanged }) {
   }, [fund?.reference, fund?.status]);
 
   const fundRefund = async (row) => {
-    const amount = cedis2(row.chargedGhs ?? row.amountGhs * 1.02);
+    const amount = cedis2(row.amountGhs);
     if (!window.confirm(`Paystack has no unpaid-out money to take this refund from.\n\nPay ${amount} from your own MoMo into Paystack to cover it? A prompt will appear on your phone: type your PIN there. Once it goes through, ${row.player.fullName} is refunded ${cedis2(row.amountGhs)} automatically.`)) return;
     setFund({ paymentId: row.paymentId, status: "starting", text: "Sending the prompt to your phone…" });
     setError(""); setNotice("");
@@ -194,7 +194,7 @@ export default function AdminRefunds({ onChanged }) {
                           </button>
                         )}
                         {canRefund && r.method !== "cash" && r.refundStatus === "failed" && !funding && (
-                          <button className="btn btn--sm" style={{ marginLeft: 8 }} onClick={() => fundRefund(r)}>Pay {cedis2(r.chargedGhs ?? r.amountGhs)} from my MoMo &amp; refund</button>
+                          <button className="btn btn--sm" style={{ marginLeft: 8 }} onClick={() => fundRefund(r)}>Pay {cedis2(r.amountGhs)} from my MoMo &amp; refund</button>
                         )}
                       </td>
                     </tr>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { api, cedis2, formatDate } from "../lib/api.js";
 
 // Admin refunds: one player at a time, or cancel the tournament and refund everyone.
@@ -36,6 +36,8 @@ export default function AdminRefunds({ onChanged }) {
   const [reason, setReason] = useState("");
   const [phrase, setPhrase] = useState("");
   const [allBusy, setAllBusy] = useState(false);
+  // Funding a refund from the organiser's MoMo: { paymentId, reference, status, text, otp }
+  const [fund, setFund] = useState(null);
 
   const load = () => api("/admin/refunds").then((d) => { setData(d); setError(""); }).catch((e) => setError(e.message));
   useEffect(() => { load(); }, []);
@@ -47,6 +49,50 @@ export default function AdminRefunds({ onChanged }) {
     const id = setInterval(load, 6000);
     return () => clearInterval(id);
   }, [active]);
+
+  useEffect(() => {
+    if (!fund?.reference || fund.status !== "pending") return undefined;
+    const started = Date.now();
+    const id = setInterval(async () => {
+      try {
+        const r = await api(`/admin/refunds/fund/${fund.reference}`);
+        if (r.status === "pending") {
+          if (Date.now() - started > 4 * 60 * 1000) setFund((f) => ({ ...f, status: "failed", text: "No approval came through in 4 minutes. If you approved it, wait a minute and press Refund again; otherwise try again." }));
+          return;
+        }
+        setFund((f) => ({ ...f, status: r.status === "success" ? "done" : "failed", text: r.message || (r.status === "success" ? "Done." : "The MoMo payment didn't go through.") }));
+        load();
+        onChanged?.();
+      } catch (e) {
+        setFund((f) => ({ ...f, status: "failed", text: e.message }));
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [fund?.reference, fund?.status]);
+
+  const fundRefund = async (row) => {
+    const amount = cedis2(row.chargedGhs ?? row.amountGhs * 1.02);
+    if (!window.confirm(`Paystack has no unpaid-out money to take this refund from.\n\nPay ${amount} from your own MoMo into Paystack to cover it? A prompt will appear on your phone: type your PIN there. Once it goes through, ${row.player.fullName} is refunded ${cedis2(row.amountGhs)} automatically.`)) return;
+    setFund({ paymentId: row.paymentId, status: "starting", text: "Sending the prompt to your phone…" });
+    setError(""); setNotice("");
+    try {
+      const r = await api(`/admin/players/${row.player.id}/refund/fund`, { method: "POST", body: {} });
+      if (r.status === "success" || r.refunded !== undefined) { setFund({ paymentId: row.paymentId, status: r.refunded === false ? "failed" : "done", text: r.message }); load(); onChanged?.(); return; }
+      setFund({ paymentId: row.paymentId, reference: r.reference, status: r.status === "send_otp" ? "otp" : "pending", text: r.displayText });
+    } catch (e) {
+      setFund({ paymentId: row.paymentId, status: "failed", text: e.message });
+    }
+  };
+
+  const sendOtp = async (e) => {
+    e.preventDefault();
+    try {
+      const r = await api(`/admin/refunds/fund/${fund.reference}/otp`, { method: "POST", body: { otp: fund.otp || "" } });
+      setFund((f) => ({ ...f, status: "pending", text: r.displayText }));
+    } catch (err) {
+      setFund((f) => ({ ...f, text: err.message }));
+    }
+  };
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -68,6 +114,12 @@ export default function AdminRefunds({ onChanged }) {
       onChanged?.();
     } catch (e) {
       setError(e.message);
+      if (row.method !== "cash" && /Paystack refused the refund/i.test(e.message)) {
+        setBusyId(null);
+        await load();
+        fundRefund(row);
+        return;
+      }
     } finally {
       setBusyId(null);
       load();
@@ -126,8 +178,10 @@ export default function AdminRefunds({ onChanged }) {
               <tbody>
                 {rows.map((r) => {
                   const canRefund = r.player && (!r.refundStatus || r.refundStatus === "failed");
+                  const funding = fund?.paymentId === r.paymentId ? fund : null;
                   return (
-                    <tr key={r.paymentId}>
+                    <Fragment key={r.paymentId}>
+                    <tr>
                       <td>{r.player ? <>{r.player.ign}<span className="muted"> · {r.player.fullName}</span></> : <span className="muted">Deleted player</span>}</td>
                       <td>{r.player && <a className="link" href={`tel:${r.player.phone}`}>{r.player.phone}</a>}</td>
                       <td>{cedis2(r.amountGhs)}</td>
@@ -135,12 +189,34 @@ export default function AdminRefunds({ onChanged }) {
                       <td><StatusCell row={r} /></td>
                       <td>
                         {canRefund && (
-                          <button className="btn btn--quiet btn--sm" disabled={busyId === r.paymentId || allBusy} onClick={() => refundOne(r)}>
+                          <button className="btn btn--quiet btn--sm" disabled={busyId === r.paymentId || allBusy || !!funding} onClick={() => refundOne(r)}>
                             {busyId === r.paymentId ? "Refunding…" : r.method === "cash" ? "Record cash refund" : r.refundStatus === "failed" ? "Try again" : `Refund ${cedis2(r.amountGhs)}`}
                           </button>
                         )}
+                        {canRefund && r.method !== "cash" && r.refundStatus === "failed" && !funding && (
+                          <button className="btn btn--sm" style={{ marginLeft: 8 }} onClick={() => fundRefund(r)}>Pay {cedis2(r.chargedGhs ?? r.amountGhs)} from my MoMo &amp; refund</button>
+                        )}
                       </td>
                     </tr>
+                    {funding && (
+                      <tr className="edit-row">
+                        <td colSpan={6}>
+                          <div className="fund-panel" role="status" aria-live="polite">
+                            {(funding.status === "pending" || funding.status === "starting") && <div className="spinner" />}
+                            <p>{funding.text}</p>
+                            {funding.status === "otp" && (
+                              <form onSubmit={sendOtp} className="fund-otp">
+                                <label htmlFor="fund-otp">Code sent to your phone</label>
+                                <input id="fund-otp" inputMode="numeric" autoComplete="one-time-code" value={funding.otp || ""} onChange={(e) => setFund({ ...funding, otp: e.target.value })} />
+                                <button className="btn btn--sm" type="submit">Submit code</button>
+                              </form>
+                            )}
+                            {(funding.status === "done" || funding.status === "failed") && <button className="btn btn--quiet btn--sm" onClick={() => setFund(null)}>Close</button>}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>

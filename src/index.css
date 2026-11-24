@@ -450,3 +450,8 @@ html, body { overflow-x: hidden; }
 .edit-row td { background: var(--ink-3); }
 .edit-player { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; padding: 8px 0; }
 .edit-player .alert, .edit-player .actions { grid-column: 1 / -1; margin: 0; }
+
+.fund-panel { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 6px 0; }
+.fund-panel p { margin: 0; flex: 1 1 280px; }
+.fund-otp { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.fund-otp input { width: 120px; }

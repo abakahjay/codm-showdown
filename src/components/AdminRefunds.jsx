@@ -84,6 +84,21 @@ export default function AdminRefunds({ onChanged }) {
     }
   };
 
+  const fundAll = async () => {
+    const total = cedis2(owedTotal);
+    if (!window.confirm(`Pay ${total} from your own MoMo into Paystack and refund everyone?\n\nA prompt for ${total} will appear on your phone: type your PIN there. Once it goes through, the tournament is cancelled for good and each player who paid online gets GH₵50 back. Paystack keeps its 1.95% fee on what you pay in.`)) return;
+    setFund({ paymentId: "all", status: "starting", text: "Sending the prompt to your phone…" });
+    setError(""); setNotice("");
+    try {
+      const r = await api("/admin/refunds/all/fund", { method: "POST", body: { confirm: data.confirmPhrase, reason: reason.trim() || data.cancelReason || "" } });
+      if (r.status === "success" || r.refunded !== undefined) { setFund({ paymentId: "all", status: r.refunded === false ? "failed" : "done", text: r.message }); load(); onChanged?.(); return; }
+      setFund({ paymentId: "all", reference: r.reference, status: r.status === "send_otp" ? "otp" : "pending", text: `${r.displayText} (${r.count} refund${r.count === 1 ? "" : "s"})` });
+      setPhrase("");
+    } catch (e) {
+      setFund({ paymentId: "all", status: "failed", text: e.message });
+    }
+  };
+
   const sendOtp = async (e) => {
     e.preventDefault();
     try {
@@ -143,6 +158,21 @@ export default function AdminRefunds({ onChanged }) {
     }
   };
 
+  const fundPanel = (f) => (
+    <div className="fund-panel" role="status" aria-live="polite">
+      {(f.status === "pending" || f.status === "starting") && <div className="spinner" />}
+      <p>{f.text}</p>
+      {f.status === "otp" && (
+        <form onSubmit={sendOtp} className="fund-otp">
+          <label htmlFor="fund-otp">Code sent to your phone</label>
+          <input id="fund-otp" inputMode="numeric" autoComplete="one-time-code" value={f.otp || ""} onChange={(e) => setFund({ ...f, otp: e.target.value })} />
+          <button className="btn btn--sm" type="submit">Submit code</button>
+        </form>
+      )}
+      {(f.status === "done" || f.status === "failed") && <button className="btn btn--quiet btn--sm" onClick={() => setFund(null)}>Close</button>}
+    </div>
+  );
+
   if (!data) {
     return (
       <section className="panel" style={{ marginTop: 32 }} aria-labelledby="admin-refunds">
@@ -153,6 +183,8 @@ export default function AdminRefunds({ onChanged }) {
   }
 
   const t = data.totals;
+  const owedTotal = data.rows.filter((r) => r.method !== "cash" && (!r.refundStatus || r.refundStatus === "failed")).reduce((sum, r) => sum + r.amountGhs, 0);
+  const fundingAll = fund?.paymentId === "all" ? fund : null;
   const phraseOk = phrase.trim().toUpperCase() === data.confirmPhrase;
   const reasonOk = data.cancelled || reason.trim().length >= 3;
 
@@ -200,20 +232,7 @@ export default function AdminRefunds({ onChanged }) {
                     </tr>
                     {funding && (
                       <tr className="edit-row">
-                        <td colSpan={6}>
-                          <div className="fund-panel" role="status" aria-live="polite">
-                            {(funding.status === "pending" || funding.status === "starting") && <div className="spinner" />}
-                            <p>{funding.text}</p>
-                            {funding.status === "otp" && (
-                              <form onSubmit={sendOtp} className="fund-otp">
-                                <label htmlFor="fund-otp">Code sent to your phone</label>
-                                <input id="fund-otp" inputMode="numeric" autoComplete="one-time-code" value={funding.otp || ""} onChange={(e) => setFund({ ...funding, otp: e.target.value })} />
-                                <button className="btn btn--sm" type="submit">Submit code</button>
-                              </form>
-                            )}
-                            {(funding.status === "done" || funding.status === "failed") && <button className="btn btn--quiet btn--sm" onClick={() => setFund(null)}>Close</button>}
-                          </div>
-                        </td>
+                        <td colSpan={6}>{fundPanel(funding)}</td>
                       </tr>
                     )}
                     </Fragment>
@@ -245,6 +264,7 @@ export default function AdminRefunds({ onChanged }) {
           Refunds send back the GH₵50 entry; the GH₵1 Paystack fee each player paid is not returned. Refunds come out of payouts Paystack hasn't sent you yet. If you've already been paid out, Paystack may refuse with a balance message; contact Paystack support to fund it.
         </p>
         {data.running && <p className="alert alert--info" role="status" style={{ marginBottom: 12 }}>Sending refunds to Paystack now…</p>}
+        {fundingAll && <div style={{ marginBottom: 12 }}>{fundPanel(fundingAll)}</div>}
         {(!data.cancelled || t.onlineToRefund > 0) && (
           <form onSubmit={refundAll} className="cancel-form">
             {!data.cancelled && (
@@ -257,9 +277,17 @@ export default function AdminRefunds({ onChanged }) {
               <label htmlFor="cancel-phrase">Type <b>{data.confirmPhrase}</b> to confirm</label>
               <input id="cancel-phrase" value={phrase} onChange={(e) => setPhrase(e.target.value)} autoComplete="off" />
             </div>
-            <button className="btn btn--danger" type="submit" disabled={!phraseOk || !reasonOk || allBusy || data.running}>
-              {allBusy ? "Starting…" : data.cancelled ? `Retry ${t.onlineToRefund} refund${t.onlineToRefund === 1 ? "" : "s"}` : `Cancel and refund ${t.onlineToRefund} player${t.onlineToRefund === 1 ? "" : "s"}`}
-            </button>
+            <div className="actions">
+              <button className="btn btn--danger" type="submit" disabled={!phraseOk || !reasonOk || allBusy || data.running || !!fundingAll}>
+                {allBusy ? "Starting…" : data.cancelled ? `Retry ${t.onlineToRefund} refund${t.onlineToRefund === 1 ? "" : "s"}` : `Cancel and refund ${t.onlineToRefund} player${t.onlineToRefund === 1 ? "" : "s"}`}
+              </button>
+              {owedTotal > 0 && (
+                <button className="btn" type="button" onClick={fundAll} disabled={!phraseOk || !reasonOk || allBusy || data.running || !!fundingAll}>
+                  Pay {cedis2(owedTotal)} from my MoMo &amp; refund everyone
+                </button>
+              )}
+            </div>
+            <p className="muted" style={{ margin: 0 }}>Use the MoMo button when Paystack has already paid everything out to you: a prompt on your phone puts the money back in, then everyone is refunded.</p>
           </form>
         )}
       </section>

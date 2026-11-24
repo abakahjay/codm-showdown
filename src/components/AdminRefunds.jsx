@@ -56,10 +56,10 @@ export default function AdminRefunds({ onChanged }) {
 
   const refundOne = async (row) => {
     const p = row.player;
-    const amount = cedis2(row.method === "cash" ? row.amountGhs : row.chargedGhs ?? row.amountGhs);
+    const amount = cedis2(row.amountGhs);
     const text = row.method === "cash"
       ? `${p.fullName} (${p.ign}) paid ${amount} in cash.\n\nHave you handed the cash back? This records the refund, marks them unpaid and takes them out of their team.`
-      : `Refund ${amount} to ${p.fullName} (${p.ign}) through Paystack?\n\nIt goes back to the MoMo wallet or card they paid with in 3 to 10 working days. Paystack keeps its fee, and the money comes out of payouts Paystack hasn't sent you yet. They will be marked unpaid and taken out of their team. This can't be undone.`;
+      : `Refund ${amount} to ${p.fullName} (${p.ign}) through Paystack?\n\nIt goes back to the MoMo wallet or card they paid with in 3 to 10 working days. Only the entry is refunded: Paystack keeps the GH₵1 fee the player paid. The money comes out of payouts Paystack hasn't sent you yet. They will be marked unpaid and taken out of their team. This can't be undone.`;
     if (!window.confirm(text)) return;
     setBusyId(row.paymentId); setError(""); setNotice("");
     try {
@@ -136,7 +136,7 @@ export default function AdminRefunds({ onChanged }) {
                       <td>
                         {canRefund && (
                           <button className="btn btn--quiet btn--sm" disabled={busyId === r.paymentId || allBusy} onClick={() => refundOne(r)}>
-                            {busyId === r.paymentId ? "Refunding…" : r.method === "cash" ? "Record cash refund" : r.refundStatus === "failed" ? "Try again" : `Refund ${cedis2(r.chargedGhs ?? r.amountGhs)}`}
+                            {busyId === r.paymentId ? "Refunding…" : r.method === "cash" ? "Record cash refund" : r.refundStatus === "failed" ? "Try again" : `Refund ${cedis2(r.amountGhs)}`}
                           </button>
                         )}
                       </td>
@@ -166,7 +166,7 @@ export default function AdminRefunds({ onChanged }) {
           <li><b>{t.cashToHandBack}</b> cash payment{t.cashToHandBack === 1 ? "" : "s"} to hand back yourself ({cedis2(t.cashGhs)}), then record each one above</li>
         </ul>
         <p className="muted" style={{ margin: "10px 0 16px" }}>
-          Paystack keeps its 1.95% fee on refunds, so each one costs you about GH₵1.00 extra, and refunds come out of payouts Paystack hasn't sent you yet. If you've already been paid out, Paystack may refuse with a balance message; contact Paystack support to fund it.
+          Refunds send back the GH₵50 entry; the GH₵1 Paystack fee each player paid is not returned. Refunds come out of payouts Paystack hasn't sent you yet. If you've already been paid out, Paystack may refuse with a balance message; contact Paystack support to fund it.
         </p>
         {data.running && <p className="alert alert--info" role="status" style={{ marginBottom: 12 }}>Sending refunds to Paystack now…</p>}
         {(!data.cancelled || t.onlineToRefund > 0) && (

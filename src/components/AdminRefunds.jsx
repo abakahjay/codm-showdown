@@ -261,7 +261,7 @@ export default function AdminRefunds({ onChanged }) {
           <li><b>{t.cashToHandBack}</b> cash payment{t.cashToHandBack === 1 ? "" : "s"} to hand back yourself ({cedis2(t.cashGhs)}), then record each one above</li>
         </ul>
         <p className="muted" style={{ margin: "10px 0 16px" }}>
-          Refunds send back the GH₵50 entry; the GH₵1 Paystack fee each player paid is not returned. Refunds come out of payouts Paystack hasn't sent you yet. If you've already been paid out, Paystack may refuse with a balance message; contact Paystack support to fund it.
+          Refunds send back the GH₵50 entry; the GH₵1 Paystack fee each player paid is not returned. Refunds come out of payouts Paystack hasn't sent you yet. If you've already been paid out, Paystack may refuse with a balance message: use the MoMo button below (or on a player's row) to pay the money back in from your phone.
         </p>
         {data.running && <p className="alert alert--info" role="status" style={{ marginBottom: 12 }}>Sending refunds to Paystack now…</p>}
         {fundingAll && <div style={{ marginBottom: 12 }}>{fundPanel(fundingAll)}</div>}
